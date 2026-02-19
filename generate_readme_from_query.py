@@ -30,26 +30,35 @@ def generate_readme_from_query_file(
     """
     Generate README from a doc-query file using Gemini.
 
-    Output location:
-        <repo_root>/generated_readmes/README_<repo_name>.md
+    Default output location:
+        <target_repo>/_GENERATED_README_FROM_README_HELPER/generated_readmes/README_<repo_name>.md
 
     Optional:
-        extra_context_path — additional markdown appended to the query.
+        extra_context_path — additional text appended to the query.
     """
-
     input_path = input_path.resolve()
-
     if not input_path.exists():
         raise FileNotFoundError(f"Query file not found: {input_path}")
 
-    # Infer repo root
-    # doc_queries/doc_query_repo.md → repo root
-    repo_root = input_path.parent.parent
+    # Infer target repo root:
+    # <repo>/_GENERATED_README_FROM_README_HELPER/doc_queries/doc_query_*.md
+    # or legacy: <repo>/doc_queries/doc_query_*.md
+    # We take parent.parent as the folder containing doc_queries.
+    # If doc_queries is inside _GENERATED_README_FROM_README_HELPER, repo_root becomes that folder,
+    # so we step up one more to get the true repo.
+    doc_queries_parent = input_path.parent.parent  # folder containing doc_queries
+    if doc_queries_parent.name == "_GENERATED_README_FROM_README_HELPER":
+        repo_root = doc_queries_parent.parent
+        generated_root = doc_queries_parent
+    else:
+        repo_root = doc_queries_parent
+        generated_root = repo_root / "_GENERATED_README_FROM_README_HELPER"
+
     repo_name = repo_root.name
 
     # Output folder
     if output_root is None:
-        output_root = repo_root / "generated_readmes"
+        output_root = generated_root / "generated_readmes"
 
     output_root = output_root.resolve()
     output_root.mkdir(parents=True, exist_ok=True)
@@ -66,7 +75,6 @@ def generate_readme_from_query_file(
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set in .env")
 
-    # Init Gemini client
     client = genai.Client(api_key=api_key)
 
     # Read main query file
@@ -80,10 +88,10 @@ def generate_readme_from_query_file(
             raise FileNotFoundError(f"Extra context file not found: {extra_context_path}")
         extra_text = _read_text_with_bom_fallback(extra_context_path)
 
-    # Final message to Gemini
+    # Final message to Gemini (swap markdown->HTML here if desired)
     message = (
         "You will be given a repository documentation prompt.\n"
-        "Generate a complete high-quality README.md.\n"
+        "Generate a complete high-quality README.\n"
         "Output ONLY markdown. No explanations.\n\n"
         + query_text
     )
@@ -91,7 +99,6 @@ def generate_readme_from_query_file(
     if extra_text:
         message += "\n\nADDITIONAL CONTEXT:\n" + extra_text
 
-    # Call Gemini
     resp = client.models.generate_content(
         model=model,
         contents=message,
@@ -101,9 +108,7 @@ def generate_readme_from_query_file(
     if not text or not text.strip():
         raise RuntimeError("Empty response from Gemini")
 
-    # Write output
     output_path.write_text(text, encoding="utf-8")
-
     return output_path
 
 
