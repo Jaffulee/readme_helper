@@ -245,23 +245,36 @@ def select_snippet_files(
     include_snippets: bool,
     snippet_max_files: int,
     exclude_paths: Optional[set[Path]] = None,
+    *,
+    min_snippet_files: int = 10,
 ) -> List[Path]:
     """
     Chooses candidate files for snippet inclusion.
+
+    Primary strategy:
+      - Prefer common text/code extensions (as before), smallest first.
+
+    Fallback/top-up strategy:
+      - If fewer than min_snippet_files are found, top up with files that have
+        NO extension (suffix == ""), still requiring text-like (not binary),
+        excluding any already excluded or selected.
+
+    Notes:
+      - exclude_paths should contain resolved Paths.
+      - Returned list length is <= snippet_max_files.
     """
     if not include_snippets:
         return []
 
     exclude_paths = exclude_paths or set()
 
-    exts = {".py", ".sql", ".md", ".yml", ".yaml", ".toml", ".json", ".js", ".ts", ".sh", ".ps1"}
-    candidates: List[Tuple[int, Path]] = []
+    preferred_exts = {".py", ".sql", ".md", ".yml", ".yaml", ".toml", ".json", ".js", ".ts", ".sh", ".ps1"}
+    preferred_candidates: List[Tuple[int, Path]] = []
+    fallback_candidates: List[Tuple[int, Path]] = []
 
     for p in files:
         rp = p.resolve()
         if rp in exclude_paths:
-            continue
-        if p.suffix.lower() not in exts:
             continue
         if is_likely_binary(p):
             continue
@@ -269,11 +282,36 @@ def select_snippet_files(
             size = p.stat().st_size
         except OSError:
             continue
-        candidates.append((size, p))
 
-    candidates.sort(key=lambda t: t[0])
-    return [p for _, p in candidates[:snippet_max_files]]
+        ext = p.suffix.lower()
 
+        if ext in preferred_exts:
+            preferred_candidates.append((size, p))
+        else:
+            # Potential fallback pool: "no extension" files only
+            if ext == "":
+                fallback_candidates.append((size, p))
+
+    preferred_candidates.sort(key=lambda t: t[0])  # smallest first
+    selected = [p for _, p in preferred_candidates[:snippet_max_files]]
+
+    # Top up if we didn't reach the minimum desired context
+    if len(selected) < min(min_snippet_files, snippet_max_files) and fallback_candidates:
+        fallback_candidates.sort(key=lambda t: t[0])  # smallest first
+
+        selected_set = {p.resolve() for p in selected}
+        needed = min(snippet_max_files, min_snippet_files) - len(selected)
+
+        for _, p in fallback_candidates:
+            if needed <= 0:
+                break
+            if p.resolve() in selected_set:
+                continue
+            selected.append(p)
+            selected_set.add(p.resolve())
+            needed -= 1
+
+    return selected
 
 # -----------------------------
 # Core implementation (local repo only)

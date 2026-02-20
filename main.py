@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from generate_readme_query import generate_doc_query_bundle, GitHubRepoURL
-from generate_readme_from_query import generate_readme_from_query_file
 
 relative_root_base = Path(__file__).resolve().parent # Get relative root for context
 
@@ -46,6 +45,7 @@ if __name__ == "__main__":
 
     # Step 2 — optionally query Gemini
     if cfg.get("query_gemini", True):
+        from generate_readme_from_query import generate_readme_from_query_file
         readme_path = generate_readme_from_query_file(
             query_path,
             extra_context_path=extra_context_file if extra_context_file.exists() else None,
