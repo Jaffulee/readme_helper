@@ -246,31 +246,39 @@ def select_snippet_files(
     snippet_max_files: int,
     exclude_paths: Optional[set[Path]] = None,
     *,
-    min_snippet_files: int = 10,
+    min_snippet_files: int = 5,
 ) -> List[Path]:
     """
-    Chooses candidate files for snippet inclusion.
+    Multi-stage snippet selection, ordered by preference:
 
-    Primary strategy:
-      - Prefer common text/code extensions (as before), smallest first.
+      Stage 1 (preferred):
+        Common code/config/docs extensions.
 
-    Fallback/top-up strategy:
-      - If fewer than min_snippet_files are found, top up with files that have
-        NO extension (suffix == ""), still requiring text-like (not binary),
-        excluding any already excluded or selected.
+      Stage 2 (secondary):
+        Jupyter notebooks (.ipynb)
 
-    Notes:
-      - exclude_paths should contain resolved Paths.
-      - Returned list length is <= snippet_max_files.
+      Stage 3 (fallback):
+        No-extension files (suffix == "")
+
+    The selector:
+      - returns up to snippet_max_files
+      - but tries to reach min_snippet_files by using later stages if earlier
+        stages don't provide enough files
+      - excludes any paths in exclude_paths (resolved Path comparison)
+      - skips likely-binary files
+      - prefers smaller files first
     """
     if not include_snippets:
         return []
 
     exclude_paths = exclude_paths or set()
 
-    preferred_exts = {".py", ".sql", ".md", ".yml", ".yaml", ".toml", ".json", ".js", ".ts", ".sh", ".ps1"}
-    preferred_candidates: List[Tuple[int, Path]] = []
-    fallback_candidates: List[Tuple[int, Path]] = []
+    stage1_exts = {".py", ".sql", ".md", ".yml", ".yaml", ".toml", ".json", ".js", ".ts", ".sh", ".ps1"}
+    stage2_exts = {".ipynb"}
+
+    stage1: List[Tuple[int, Path]] = []
+    stage2: List[Tuple[int, Path]] = []
+    stage3: List[Tuple[int, Path]] = []
 
     for p in files:
         rp = p.resolve()
@@ -285,31 +293,50 @@ def select_snippet_files(
 
         ext = p.suffix.lower()
 
-        if ext in preferred_exts:
-            preferred_candidates.append((size, p))
+        if ext in stage1_exts:
+            stage1.append((size, p))
+        elif ext in stage2_exts:
+            stage2.append((size, p))
+        elif ext == "":
+            stage3.append((size, p))
         else:
-            # Potential fallback pool: "no extension" files only
-            if ext == "":
-                fallback_candidates.append((size, p))
+            # ignore everything else for now
+            continue
 
-    preferred_candidates.sort(key=lambda t: t[0])  # smallest first
-    selected = [p for _, p in preferred_candidates[:snippet_max_files]]
+    stage1.sort(key=lambda t: t[0])
+    stage2.sort(key=lambda t: t[0])
+    stage3.sort(key=lambda t: t[0])
 
-    # Top up if we didn't reach the minimum desired context
-    if len(selected) < min(min_snippet_files, snippet_max_files) and fallback_candidates:
-        fallback_candidates.sort(key=lambda t: t[0])  # smallest first
+    selected: List[Path] = []
+    selected_set: set[Path] = set()
 
-        selected_set = {p.resolve() for p in selected}
-        needed = min(snippet_max_files, min_snippet_files) - len(selected)
-
-        for _, p in fallback_candidates:
-            if needed <= 0:
+    def add_from(pool: List[Tuple[int, Path]], limit: int) -> None:
+        nonlocal selected
+        for _, p in pool:
+            if len(selected) >= limit:
                 break
-            if p.resolve() in selected_set:
+            rp = p.resolve()
+            if rp in selected_set:
                 continue
             selected.append(p)
-            selected_set.add(p.resolve())
-            needed -= 1
+            selected_set.add(rp)
+
+    # Hard cap
+    cap = max(0, snippet_max_files)
+
+    # Minimum desired context (never exceed cap)
+    target_min = min(min_snippet_files, cap) if cap else 0
+
+    # Stage 1 always first
+    add_from(stage1, cap)
+
+    # If we haven't hit the minimum, top up with Stage 2
+    if len(selected) < target_min:
+        add_from(stage2, cap)
+
+    # If still short, top up with Stage 3
+    if len(selected) < target_min:
+        add_from(stage3, cap)
 
     return selected
 
