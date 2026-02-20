@@ -1,90 +1,108 @@
-[Visit my website](https://jaffulee.github.io/Jaffulee/)
+<div>
 
-# readme_helper
+<p><a href="https://jaffulee.github.io/Jaffulee/">Visit my website</a></p>
 
-## Overview
+<h1>readme_helper</h1>
 
-This repository provides a Python-based tool for automatically generating high-quality `README.md` files using a Large Language Model (LLM), specifically the Google Gemini API. It works by first systematically collecting relevant context from a given repository (file tree, file list, existing READMEs, key configuration files, and code snippets) into a structured markdown "query bundle," and then sending this bundle as a prompt to the LLM to generate the final `README.md`.
+<h2>Overview</h2>
+<p>
+This repository provides a Python-based tool for automatically generating high-quality <code>README.md</code> files using a Large Language Model (LLM), specifically the Google Gemini API.
+</p>
+<p>
+It works by collecting structured context from a target repository (file tree, file list, existing READMEs, key configuration files, and selected code snippets) into a markdown query bundle, then sending that bundle to Gemini to generate the final <code>README.md</code>.
+</p>
+<p>
+The tool can document either:
+</p>
+<ul>
+<li>a local Git repository (path on disk), or</li>
+<li>a public GitHub repository (URL)</li>
+</ul>
+<p>
+This dual input mode is intended to make it easy to use the same workflow in local development or against a remote public repo.
+</p>
 
-The goal is to streamline the documentation process, ensuring that READMEs are comprehensive and reflect the current state of the repository.
+<hr/>
 
----
+<h2>Features</h2>
+<ul>
+<li><strong>AI-powered README generation</strong>: Uses Google Gemini (default: <code>gemini-2.5-flash</code>) to produce structured documentation.</li>
+<li><strong>Works with local repos or public GitHub URLs</strong>: Generate documentation from either a local Git repo or a public GitHub repository link.</li>
+<li><strong>Automatic repository context gathering</strong>:
+  <ul>
+    <li>Git-aware file tree and file list</li>
+    <li>Existing README detection and inclusion</li>
+    <li>Key configuration file extraction (e.g., <code>requirements.txt</code>)</li>
+    <li>Optional code snippet sampling for functional context</li>
+  </ul>
+</li>
+<li><strong>Git-aware file handling</strong>: Uses <code>git ls-files</code> to respect <code>.gitignore</code> and include only relevant files.</li>
+<li><strong>Configurable snippet inclusion</strong>: Control number of snippet files and max bytes per snippet.</li>
+<li><strong>Robust file reading</strong>: Handles multiple encodings, avoids binary files, and truncates large files.</li>
+<li><strong>Modular architecture</strong>: Separates repository scanning and LLM generation into distinct modules.</li>
+<li><strong>Optional style/context injection</strong>: Supports extra context file (e.g., <code>readme_style_context.html</code>) to guide output style.</li>
+</ul>
 
-## Features
+<hr/>
 
-*   **AI-Powered README Generation**: Utilizes the Google Gemini API (defaulting to `gemini-2.5-flash`) to create descriptive and well-structured READMEs.
-*   **Automatic Context Gathering**: Scans the target repository to collect crucial information including:
-    *   A compact, git-respecting representation of the repository's file tree.
-    *   A comprehensive list of all tracked and untracked files (excluding ignored files via `.gitignore`).
-    *   Content of any existing `README.md` (or other specified README candidates).
-    *   Content of common key configuration files (e.g., `requirements.txt`, `pyproject.toml`, `Dockerfile`).
-    *   Sampled code snippets from relevant source files to provide functional context.
-*   **Git-Aware File Handling**: Leverages `git ls-files` to accurately identify and list files, respecting `.gitignore` rules.
-*   **Configurable Snippet Inclusion**: Allows control over whether code snippets are included, the maximum number of snippet files, and the maximum bytes per snippet.
-*   **Robust File Reading**: Handles various text encodings, detects and avoids binary files, and truncates overly large files to manage token limits.
-*   **Modular Design**: Separates the concerns of repository context gathering (`generate_readme_query.py`) and AI-driven README generation (`generate_readme_from_query.py`) for clarity and flexibility.
-*   **Optional Extra Context**: Supports providing an additional file (e.g., `readme_style_context.html`) to guide the LLM's output style or provide further instructions beyond the gathered repository context.
+<h2>Setup</h2>
 
----
+<h3>Repository</h3>
+<p>
+Project repository: <a href="https://github.com/Jaffulee/readme_helper">https://github.com/Jaffulee/readme_helper</a>
+</p>
 
-## Setup
+<h3>1. Clone the repository</h3>
+<pre><code>git clone https://github.com/Jaffulee/readme_helper.git
+cd readme_helper
+</code></pre>
 
-To get this project running, follow these steps:
+<h3>2. Install dependencies</h3>
+<p>The project uses <code>python-dotenv</code> and <code>google-genai</code>.</p>
+<pre><code>pip install -r requirements.txt
+</code></pre>
 
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/your-username/readme_helper.git
-    cd readme_helper
-    ```
+<h3>3. Configure Gemini API key</h3>
+<p>Create a <code>.env</code> file in the project root:</p>
+<pre><code>GEMINI_API_KEY=your_gemini_api_key_here
+</code></pre>
+<p>The key must be accessible via environment variable <code>GEMINI_API_KEY</code>.</p>
+Further instructions found in my tutorial repository
+<a href="https://github.com/Jaffulee/gemini_api_template">https://github.com/Jaffulee/gemini_api_template</a>,
+which I used to set up this repository!
 
-2.  **Install Python Dependencies**:
-    The project relies on `python-dotenv` for environment variable management and `google-genai` for interacting with the Gemini API.
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *(Note: The `requirements.txt` file is expected to contain `python-dotenv` and `google-genai`.)*
+<h3>4. Ensure Git is installed</h3>
+<p>
+The tool relies on the Git CLI for accurate file listing and tree generation. Git must be available in your system PATH. Instructions for Git setup can be found at <a href="https://github.com/Jaffulee/getting_started_using_github_and_python">https://github.com/Jaffulee/getting_started_using_github_and_python</a>.
+</p>
 
-3.  **Set up Gemini API Key**:
-    You need a Google Gemini API key. Create a `.env` file in the root of this repository (or specify a different path) and add your API key:
-    ```
-    GEMINI_API_KEY=your_gemini_api_key_here
-    ```
-    Ensure your API key starts with `AIza...`.
+<hr/>
 
-4.  **Install Git (if not already present)**:
-    The tool uses the `git` command-line utility to list repository files and build the file tree. Make sure Git is installed and accessible in your system's PATH.
+<h2>Usage</h2>
+<p>
+The workflow consists of two stages:
+</p>
+<ol>
+<li>Generate a repository context query bundle</li>
+<li>Generate a README from that query using Gemini</li>
+</ol>
 
----
+<p>
+The <code>main.py</code> script orchestrates both steps.
+</p>
 
-## Usage
-
-The `main.py` script orchestrates the two primary steps: generating the repository context query and then generating the README from that query.
-
-1.  **Generate the doc query file**:
-    The `generate_doc_query_bundle` function (from `generate_readme_query.py`) scans a specified repository and creates a markdown file containing all the gathered context.
-
-2.  **Generate README from the query file**:
-    The `generate_readme_from_query_file` function (from `generate_readme_from_query.py`) takes the query file, sends it to the Gemini API, and writes the LLM's response. An optional `extra_context_path` can be provided to further guide the LLM.
-
-Here's how to run the process using `main.py`:
-
-```python
-# main.py
-
-from pathlib import Path
+<h3>Example workflow</h3>
+<pre><code class="language-python">from pathlib import Path
 from generate_readme_query import generate_doc_query_bundle
 from generate_readme_from_query import generate_readme_from_query_file
 
-# Define the root of the repository you want to document
-# (Replace with the actual path to your target repository)
+# Target repository to document
 repo_to_document = Path("path/to/your/target/repository")
 
-# Optional: extra style/context file for LLM.
-# This file (e.g., readme_style_context.html) provides additional instructions
-# to the LLM on how to format or structure the README.
+# Optional style/context file
 extra_context_file = Path(__file__).resolve().parent / "readme_style_context.html"
 
-# 1) Generate the doc query file inside the repo_to_document's 'doc_queries' folder
+# Step 1: Generate query bundle
 query_cfg = {
     "repo_root": repo_to_document,
     "out_dir": repo_to_document / "_GENERATED_README_FROM_README_HELPER" / "doc_queries",
@@ -96,70 +114,82 @@ query_cfg = {
 query_path = generate_doc_query_bundle(**query_cfg)
 print(f"Wrote query: {query_path}")
 
-# 2) Generate README from that query file
-# Use generate_readme_from_query_file directly or via generate_readme_from_query_config
-readme_cfg = {
-    "input_path": query_path,
-    "output_root": repo_to_document, # Output to the repo root to overwrite its README.md
-    "model": "gemini-2.5-flash",
-    "extra_context_path": extra_context_file if extra_context_file.exists() else None,
-}
-# Using the wrapper for dictionary config:
-# readme_path = generate_readme_from_query_config(readme_cfg)
-# Or direct call:
+# Step 2: Generate README from query
 readme_path = generate_readme_from_query_file(
-    input_path=readme_cfg["input_path"],
-    output_root=readme_cfg["output_root"],
-    model=readme_cfg["model"],
-    extra_context_path=readme_cfg["extra_context_path"],
+    input_path=query_path,
+    output_root=repo_to_document,
+    model="gemini-2.5-flash",
+    extra_context_path=extra_context_file if extra_context_file.exists() else None,
 )
 print(f"Wrote README: {readme_path}")
-```
+</code></pre>
 
-To run this, modify the `repo_to_document` variable in `main.py` to point to the repository for which you want to generate a README, and then execute:
+<h3>Run</h3>
+<pre><code>python main.py
+</code></pre>
 
-```bash
-python main.py
-```
+<p>
+If <code>output_root</code> is not specified, generated READMEs are written to:
+</p>
+<pre><code>&lt;repo&gt;/_GENERATED_README_FROM_README_HELPER/generated_readmes/README_&lt;repo_name&gt;.md
+</code></pre>
 
-This will first create a query markdown file (e.g., `_GENERATED_README_FROM_README_HELPER/doc_queries/doc_query_my_repo.md`) and then use that file to generate or update the `README.md` in your target repository. If `output_root` is not specified in `generate_readme_from_query_file`, the generated README will be placed in `<repo_to_document>/_GENERATED_README_FROM_README_HELPER/generated_readmes/README_<repo_name>.md`.
+<hr/>
 
----
-
-## Project Structure
-
-```text
-.
+<h2>Project Structure</h2>
+<pre><code>.
 ├── _GENERATED_README_FROM_README_HELPER/
 │   ├── doc_queries/
-│   │   └── doc_query_readme_helper.md # Example generated query bundle (for this repo)
+│   │   └── doc_query_readme_helper.md
 │   └── generated_readmes/
-│       └── README_readme_helper.md    # Example generated README (for this repo)
-├── .gitignore                   # Files/folders to ignore from git
-├── README.md                    # This README file
-├── generate_readme_from_query.py # Module for AI-driven README generation
-├── generate_readme_query.py      # Module for repository context gathering
-├── main.py                      # Orchestrates the README generation process
-├── readme_style_context.html    # Optional file for LLM style guidance or additional context
-└── requirements.txt             # Python dependencies
-```
+│       └── README_readme_helper.md
+├── .gitignore
+├── README.md
+├── generate_readme_from_query.py
+├── generate_readme_query.py
+├── main.py
+├── readme_style_context.html
+└── requirements.txt
+</code></pre>
 
-*   `main.py`: The entry point script that configures and executes the two main stages of README generation.
-*   `generate_readme_query.py`: Contains functions to scan a repository, list files, build a compact file tree, identify key files (like `requirements.txt` or `Dockerfile`), read existing READMEs, and select code snippets. It compiles all this information into a structured markdown string, which forms the LLM's prompt.
-*   `generate_readme_from_query.py`: Responsible for interfacing with the Google Gemini API. It reads the markdown query generated by `generate_readme_query.py`, sends it to the specified Gemini model, and writes the returned markdown content to the target `README.md` file. It also supports including an `extra_context_path` for additional LLM instructions.
-*   `_GENERATED_README_FROM_README_HELPER/`: A directory created in the target repository to hold generated assets.
-*   `_GENERATED_README_FROM_README_HELPER/doc_queries/`: A subdirectory to store the intermediate markdown query bundles. When documenting an external repository, a `doc_queries` folder is typically created within the `_GENERATED_README_FROM_README_HELPER` directory inside that target repository.
-*   `_GENERATED_README_FROM_README_HELPER/generated_readmes/`: A subdirectory to store generated READMEs. When `output_root` is not explicitly set in `generate_readme_from_query_file`, the output will be placed here within a `_GENERATED_README_FROM_README_HELPER` directory inside the target repository.
-*   `readme_style_context.html`: An optional file that can be passed to `generate_readme_from_query_file` as `extra_context_path` to provide the LLM with additional styling rules or content to consider when generating the README.
+<ul>
+<li><strong>main.py</strong>: Entry point orchestrating query generation and README generation.</li>
+<li><strong>generate_readme_query.py</strong>: Scans repository and builds structured query bundle.</li>
+<li><strong>generate_readme_from_query.py</strong>: Sends query to Gemini and writes resulting README.</li>
+<li><strong>_GENERATED_README_FROM_README_HELPER/</strong>: Output directory for generated queries and READMEs.</li>
+<li><strong>readme_style_context.html</strong>: Optional style or instruction context for the LLM.</li>
+<li><strong>requirements.txt</strong>: Python dependencies.</li>
+</ul>
 
----
+<hr/>
 
-## Notes/Design
+<h2>Notes / Design</h2>
+<p>
+The core design principle is structured context injection: providing the LLM with a complete, deterministic representation of a repository so it can generate accurate documentation.
+</p>
 
-The core design principle of this tool is to provide the LLM with a highly structured and comprehensive context about the repository it needs to document, while adhering to strict rules about the LLM's output.
+<h3>Context gathering strategy</h3>
+<ul>
+<li>Uses Git-aware file listing to avoid ignored files.</li>
+<li>Prioritizes existing README and configuration files.</li>
+<li>Includes optional source snippets for functional clarity.</li>
+<li>Prevents binary inclusion and truncates oversized files.</li>
+<li>Builds a single structured markdown prompt with explicit generation rules.</li>
+</ul>
 
-The `generate_readme_query.py` module focuses on intelligent context extraction:
-*   It leverages Git to ensure only relevant, non-ignored files are considered.
-*   It prioritizes existing documentation (e.g., `README.md`) and common configuration files, as these often contain critical project metadata.
-*   Heuristics are used to prevent binary files from being included and to truncate very large text files, balancing completeness with token limits and prompt efficiency.
-*   The generated query bundle explicitly includes `TASK` and `RULES` sections to guide the LLM's behavior, ensuring the output is a high-quality `README.md` with clear sections and no extraneous content.
+<h3>Generation pipeline</h3>
+<ol>
+<li>Scan repository and assemble context bundle.</li>
+<li>Append optional style guidance.</li>
+<li>Send structured prompt to Gemini.</li>
+<li>Write returned README to output location.</li>
+</ol>
+
+<hr/>
+
+<h2>Summary</h2>
+<p>
+<code>readme_helper</code> automates high-quality README creation by combining deterministic repository analysis with LLM-driven documentation generation. It supports documenting either local Git repositories or public GitHub repository URLs, using the same two-step pipeline.
+</p>
+
+</div>

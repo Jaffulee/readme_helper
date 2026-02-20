@@ -30,33 +30,31 @@ def generate_readme_from_query_file(
     """
     Generate README from a doc-query file using Gemini.
 
+    Expected query location:
+        <anywhere>/_GENERATED_README_FROM_README_HELPER/doc_queries/doc_query_<repo_name>.md
+
     Default output location:
-        <target_repo>/_GENERATED_README_FROM_README_HELPER/generated_readmes/README_<repo_name>.md
+        <same _GENERATED_README_FROM_README_HELPER>/generated_readmes/README_<repo_name>.md
 
     Optional:
-        extra_context_path — additional text appended to the query.
+        extra_context_path — additional text appended to the prompt.
     """
     input_path = input_path.resolve()
     if not input_path.exists():
         raise FileNotFoundError(f"Query file not found: {input_path}")
 
-    # Infer target repo root:
-    # <repo>/_GENERATED_README_FROM_README_HELPER/doc_queries/doc_query_*.md
-    # or legacy: <repo>/doc_queries/doc_query_*.md
-    # We take parent.parent as the folder containing doc_queries.
-    # If doc_queries is inside _GENERATED_README_FROM_README_HELPER, repo_root becomes that folder,
-    # so we step up one more to get the true repo.
-    doc_queries_parent = input_path.parent.parent  # folder containing doc_queries
-    if doc_queries_parent.name == "_GENERATED_README_FROM_README_HELPER":
-        repo_root = doc_queries_parent.parent
-        generated_root = doc_queries_parent
-    else:
-        repo_root = doc_queries_parent
-        generated_root = repo_root / "_GENERATED_README_FROM_README_HELPER"
+    # Derive repo_name from filename
+    filename = input_path.stem  # e.g. "doc_query_amplitude-project"
+    prefix = "doc_query_"
+    if not filename.startswith(prefix):
+        raise RuntimeError(f"Query filename must start with '{prefix}', got: {filename}")
 
-    repo_name = repo_root.name
+    repo_name = filename[len(prefix):]
 
-    # Output folder
+    # Derive generated root from query file location
+    # .../_GENERATED_README_FROM_README_HELPER/doc_queries/<file>
+    generated_root = input_path.parent.parent
+
     if output_root is None:
         output_root = generated_root / "generated_readmes"
 
@@ -65,7 +63,7 @@ def generate_readme_from_query_file(
 
     output_path = output_root / f"README_{repo_name}.md"
 
-    # Load environment variables
+    # Load env
     if env_path:
         load_dotenv(dotenv_path=env_path)
     else:
@@ -73,14 +71,12 @@ def generate_readme_from_query_file(
 
     api_key = os.getenv(api_key_env_var)
     if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not set in .env")
+        raise RuntimeError(f"{api_key_env_var} not set in .env")
 
     client = genai.Client(api_key=api_key)
 
-    # Read main query file
     query_text = _read_text_with_bom_fallback(input_path)
 
-    # Optional extra context file
     extra_text = ""
     if extra_context_path:
         extra_context_path = extra_context_path.resolve()
@@ -88,7 +84,6 @@ def generate_readme_from_query_file(
             raise FileNotFoundError(f"Extra context file not found: {extra_context_path}")
         extra_text = _read_text_with_bom_fallback(extra_context_path)
 
-    # Final message to Gemini (swap markdown->HTML here if desired)
     message = (
         "You will be given a repository documentation prompt.\n"
         "Generate a complete high-quality README.\n"
@@ -113,7 +108,4 @@ def generate_readme_from_query_file(
 
 
 def generate_readme_from_query_config(config: Dict) -> Path:
-    """
-    Dict wrapper so you can call with **cfg
-    """
     return generate_readme_from_query_file(**config)

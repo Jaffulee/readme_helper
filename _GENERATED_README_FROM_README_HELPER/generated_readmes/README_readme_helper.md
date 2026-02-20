@@ -51,6 +51,8 @@ To get this project running, follow these steps:
     ```
     Ensure your API key starts with `AIza...`.
 
+    Further instructions found in my tutorial repository [https://github.com/Jaffulee/gemini_api_template](https://github.com/Jaffulee/gemini_api_template), which I used to set up this repository!
+
 4.  **Install Git (if not already present)**:
     The tool uses the `git` command-line utility to list repository files and build the file tree. Make sure Git is installed and accessible in your system's PATH.
 
@@ -66,7 +68,7 @@ The `main.py` script orchestrates the two primary steps: generating the reposito
 2.  **Generate README from the query file**:
     The `generate_readme_from_query_file` function (from `generate_readme_from_query.py`) takes the query file, sends it to the Gemini API, and writes the LLM's response. An optional `extra_context_path` can be provided to further guide the LLM.
 
-Here's how to run the process using `main.py`:
+Here's how to run the process using `main.py` for *this* repository itself as an example target:
 
 ```python
 # main.py
@@ -75,19 +77,22 @@ from pathlib import Path
 from generate_readme_query import generate_doc_query_bundle
 from generate_readme_from_query import generate_readme_from_query_file
 
-# Define the root of the repository you want to document
-# (Replace with the actual path to your target repository)
-repo_to_document = Path("path/to/your/target/repository")
+# Define the root of the repository you want to document.
+# For this example, we're documenting the readme_helper repository itself.
+repo_to_document = Path(__file__).resolve().parent
+
+generated_root = repo_to_document / "_GENERATED_README_FROM_README_HELPER"
+doc_queries_dir = generated_root / "doc_queries"
 
 # Optional: extra style/context file for LLM.
 # This file (e.g., readme_style_context.html) provides additional instructions
 # to the LLM on how to format or structure the README.
-extra_context_file = Path(__file__).resolve().parent / "readme_style_context.html"
+extra_context_file = repo_to_document / "readme_style_context.html"
 
-# 1) Generate the doc query file inside the repo_to_document's 'doc_queries' folder
+# 1) Generate the doc query file inside the target repo's 'doc_queries' folder
 query_cfg = {
     "repo_root": repo_to_document,
-    "out_dir": repo_to_document / "_GENERATED_README_FROM_README_HELPER" / "doc_queries",
+    "out_dir": doc_queries_dir,
     "snippet_max_bytes_per_file": 20_000,
     "include_snippets": True,
     "snippet_max_files": 12,
@@ -96,33 +101,31 @@ query_cfg = {
 query_path = generate_doc_query_bundle(**query_cfg)
 print(f"Wrote query: {query_path}")
 
-# 2) Generate README from that query file
-# Use generate_readme_from_query_file directly or via generate_readme_from_query_config
-readme_cfg = {
-    "input_path": query_path,
-    "output_root": repo_to_document, # Output to the repo root to overwrite its README.md
-    "model": "gemini-2.5-flash",
-    "extra_context_path": extra_context_file if extra_context_file.exists() else None,
-}
-# Using the wrapper for dictionary config:
-# readme_path = generate_readme_from_query_config(readme_cfg)
-# Or direct call:
+# 2) Generate README from that query file.
+# By default, the README is generated in a subfolder within _GENERATED_README_FROM_README_HELPER.
 readme_path = generate_readme_from_query_file(
-    input_path=readme_cfg["input_path"],
-    output_root=readme_cfg["output_root"],
-    model=readme_cfg["model"],
-    extra_context_path=readme_cfg["extra_context_path"],
+    input_path=query_path,
+    extra_context_path=extra_context_file if extra_context_file.exists() else None,
 )
 print(f"Wrote README: {readme_path}")
+
+# If you wanted to overwrite the target repository's README.md directly,
+# you would explicitly set 'output_root' like this:
+# readme_path_overwrite = generate_readme_from_query_file(
+#     input_path=query_path,
+#     output_root=repo_to_document,
+#     extra_context_path=extra_context_file if extra_context_file.exists() else None,
+# )
+# print(f"Wrote README to overwrite: {readme_path_overwrite}")
 ```
 
-To run this, modify the `repo_to_document` variable in `main.py` to point to the repository for which you want to generate a README, and then execute:
+To run this, execute:
 
 ```bash
 python main.py
 ```
 
-This will first create a query markdown file (e.g., `_GENERATED_README_FROM_README_HELPER/doc_queries/doc_query_my_repo.md`) and then use that file to generate or update the `README.md` in your target repository. If `output_root` is not specified in `generate_readme_from_query_file`, the generated README will be placed in `<repo_to_document>/_GENERATED_README_FROM_README_HELPER/generated_readmes/README_<repo_name>.md`.
+This will first create a query markdown file (e.g., `_GENERATED_README_FROM_README_HELPER/doc_queries/doc_query_readme_helper.md` for this repository) and then use that file to generate a new `README.md` within `_GENERATED_README_FROM_README_HELPER/generated_readmes/` in your target repository. If you wish to directly update the main `README.md` of the target repository, refer to the commented-out `output_root` example in `main.py`.
 
 ---
 
