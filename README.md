@@ -96,13 +96,13 @@ The <code>main.py</code> script orchestrates both steps.
 from generate_readme_query import generate_doc_query_bundle
 from generate_readme_from_query import generate_readme_from_query_file
 
-# Target repository to document
+`# Target repository to document`
 repo_to_document = Path("path/to/your/target/repository")
 
-# Optional style/context file
+`# Optional style/context file`
 extra_context_file = Path(__file__).resolve().parent / "readme_style_context.html"
 
-# Step 1: Generate query bundle
+`# Step 1: Generate query bundle`
 query_cfg = {
     "repo_root": repo_to_document,
     "out_dir": repo_to_document / "_GENERATED_README_FROM_README_HELPER" / "doc_queries",
@@ -114,7 +114,7 @@ query_cfg = {
 query_path = generate_doc_query_bundle(**query_cfg)
 print(f"Wrote query: {query_path}")
 
-# Step 2: Generate README from query
+`# Step 2: Generate README from query`
 readme_path = generate_readme_from_query_file(
     input_path=query_path,
     output_root=repo_to_document,
