@@ -20,15 +20,58 @@ generated_root = generated_root_base / "_GENERATED_README_FROM_README_HELPER"
 # Optional: extra style/context file
 extra_context_file = relative_root_base / "readme_style_context.html"
 
+# ---------------------------------------------------------------------
+# CONFIGURATION
+# ---------------------------------------------------------------------
+# repo_root:
+#   The repository to document.
+#   Accepts:
+#     - Local path → Path("C:/full/path/to/repo")
+#     - Relative path → Path(__file__).resolve().parent
+#     - Remote GitHub repo → GitHubRepoURL("https://github.com/user/repo")
+#
+# generated_root:
+#   Root output directory where ALL generated content will go.
+#   The script will automatically create:
+#     generated_root/
+#       ├── doc_queries/          # LLM input query bundles
+#       └── generated_readmes/    # Final README outputs
+#
+# include_snippets:
+#   If True → include actual file contents in LLM context.
+#   If False → only repo structure + file list used.
+#   Usually keep True for best README quality.
+#
+# snippet_max_bytes_per_file:
+#   Max bytes read from each file when building context.
+#   Prevents massive files from flooding the prompt.
+#   20_000–50_000 recommended.
+#
+# snippet_max_files:
+#   Maximum number of files whose contents are included.
+#   Files are selected in priority order:
+#       1. Code/config/docs (.py, .md, .json, etc.)
+#       2. Notebooks (.ipynb)
+#       3. No-extension files (Dockerfile, Makefile, etc.)
+#
+# tree_max_lines:
+#   Maximum number of lines in repo tree view.
+#   Prevents extremely large repos flooding prompt.
+#
+# query_gemini:
+#   If True → send generated query to Gemini and produce README.
+#   If False → only generate the query file (for manual use).
+# ---------------------------------------------------------------------
+
 # Config
 cfg = {
-    "repo_root": repo, # The path or url to the repository
-    "generated_root": generated_root,
-    "snippet_max_bytes_per_file": 20_000,
-    "include_snippets": True,
-    "snippet_max_files": 12,
-    "tree_max_lines": 500,
-    "query_gemini": True
+    "repo_root": repo,  # The path or GitHubRepoURL to the repository
+    "generated_root": generated_root,  # Where outputs are written
+    "include_snippets": True,  # Include file contents in LLM context
+    "snippet_max_bytes_per_file": 20_000,  # Max bytes per file snippet
+    "snippet_max_files": 12,  # Max number of snippet files
+    "tree_max_lines": 500,  # Max repo tree size
+    "query_gemini": True  # Whether to call Gemini to generate README
 }
 
 # Main script (leave unchanged)

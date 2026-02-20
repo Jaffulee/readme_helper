@@ -88,41 +88,21 @@ The workflow consists of two stages:
 </ol>
 
 <p>
-The <code>main.py</code> script orchestrates both steps.
+The <code>main.py</code> script orchestrates both steps, and is intended to be edited:
 </p>
 
 <h3>Example workflow</h3>
-<pre><code class="language-python">from pathlib import Path
-from generate_readme_query import generate_doc_query_bundle
-from generate_readme_from_query import generate_readme_from_query_file
-
-`# Target repository to document`
-repo_to_document = Path("path/to/your/target/repository")
-
-`# Optional style/context file`
-extra_context_file = Path(__file__).resolve().parent / "readme_style_context.html"
-
-`# Step 1: Generate query bundle`
-query_cfg = {
-    "repo_root": repo_to_document,
-    "out_dir": repo_to_document / "_GENERATED_README_FROM_README_HELPER" / "doc_queries",
-    "snippet_max_bytes_per_file": 20_000,
-    "include_snippets": True,
-    "snippet_max_files": 12,
-    "tree_max_lines": 500,
-}
-query_path = generate_doc_query_bundle(**query_cfg)
-print(f"Wrote query: {query_path}")
-
-`# Step 2: Generate README from query`
-readme_path = generate_readme_from_query_file(
-    input_path=query_path,
-    output_root=repo_to_document,
-    model="gemini-2.5-flash",
-    extra_context_path=extra_context_file if extra_context_file.exists() else None,
-)
-print(f"Wrote README: {readme_path}")
-</code></pre>
+<p>
+<ol>
+<li>Follow the Setup instructions.</li>
+<li>Access <code>main.py</code>.</li>
+<li>Edit the repo variable to either be a GitHub URL or a local path to a git repository, examples of both are left commented.</li>
+<li>Edit the context file <code>readme_style_context.html</code> for any further custom instructions to be passed to Gemini.</li>
+<li>Edit the configuration dictionary to the desired settings.</li>
+<li>Run <code>main.py</code>.</li>
+<li>Access the generated documents in <code>_GENERATED_README_FROM_README_HELPER/</code>.</li>
+</ol>
+</p>
 
 <h3>Run</h3>
 <pre><code>python main.py
