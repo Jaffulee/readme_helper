@@ -273,8 +273,122 @@ def select_snippet_files(
 
     exclude_paths = exclude_paths or set()
 
-    stage1_exts = {".py", ".sql", ".md", ".yml", ".yaml", ".toml", ".json", ".js", ".ts", ".sh", ".ps1"}
-    stage2_exts = {".ipynb"}
+    stage1_exts = {
+        # Core application / library code
+        ".py", ".sql", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
+        ".java", ".kt", ".kts", ".scala", ".groovy",
+        ".cs", ".fs", ".fsx", ".vb",
+        ".go", ".rs", ".zig",
+        ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
+        ".swift", ".m", ".mm",
+        ".rb", ".php", ".phtml",
+        ".pl", ".pm",
+        ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd",
+        ".lua", ".tcl",
+        ".r", ".R",
+        ".dart",
+        ".ex", ".exs", ".erl", ".hrl",
+        ".clj", ".cljs", ".cljc",
+        ".hs",
+        ".ml", ".mli",
+        ".nim",
+        ".sol",
+
+        # Markup / documentation with strong context value
+        ".md", ".mdx", ".rst", ".adoc", ".txt",
+        ".html", ".htm", ".xhtml",
+        ".xml", ".xsd", ".xsl", ".xslt",
+        ".svg",
+
+        # Data / serialization / config
+        ".json", ".jsonc", ".json5",
+        ".yaml", ".yml",
+        ".toml", ".ini", ".cfg", ".conf", ".config",
+        ".properties",
+        ".env", ".env.example",
+        ".editorconfig",
+
+        # Infra / build / tooling / deployment
+        ".dockerfile",
+        ".tf", ".tfvars", ".hcl",
+        ".nomad",
+        ".bicep",
+        ".gradle",
+        ".sbt",
+        ".cmake",
+        ".mk",
+        ".bazel", ".bzl",
+        ".nuspec",
+        ".csproj", ".fsproj", ".vbproj", ".props", ".targets",
+        ".sln",
+        ".vcxproj",
+        ".xproj",
+        ".pbxproj",
+        ".plist",
+
+        # Web / templates that often contain app structure
+        ".vue", ".svelte",
+        ".astro",
+        ".jinja", ".j2",
+        ".hbs", ".handlebars",
+        ".mustache",
+        ".ejs", ".eta",
+        ".pug",
+        ".njk",
+        ".twig",
+        ".liquid",
+
+        # Database / API / schema
+        ".graphql", ".gql",
+        ".proto",
+        ".avsc",
+
+        # Notebooks / analysis code
+        ".ipynb",
+
+        # CI / workflow / packaging metadata often useful as text files
+        ".lock",
+    }
+
+    stage2_exts = {
+        # Styling / presentation: useful sometimes, but usually lower context value
+        ".css", ".scss", ".sass", ".less", ".styl", ".pcss",
+
+        # Lower-signal web / frontend assets
+        ".map",
+
+        # Query / notebook / analysis adjacent
+        ".q",
+        ".rmd",
+
+        # Localization / content dictionaries
+        ".po", ".pot", ".mo",
+        ".csv", ".tsv",
+
+        # Log / patch / diff / misc text
+        ".log",
+        ".patch", ".diff",
+
+        # DSLs / less common config formats that may matter but often don’t
+        ".cue",
+        ".rego",
+
+        # API collections / test descriptions / fixtures
+        ".har",
+        ".http", ".rest",
+
+        # Additional template / content formats with mixed signal
+        ".tex",
+        ".bib",
+
+        # Mobile / platform metadata that can help but often is secondary
+        ".strings",
+        ".xcconfig",
+
+        # Infra / docs / diagrams as text but often lower signal than code/config
+        ".plantuml", ".puml",
+        ".mermaid", ".mmd",
+    }
 
     stage1: List[Tuple[int, Path]] = []
     stage2: List[Tuple[int, Path]] = []
